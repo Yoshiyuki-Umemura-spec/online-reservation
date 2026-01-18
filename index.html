@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>質問受付 予約ページ</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      max-width: 700px;
+      margin: 40px auto;
+    }
+    h1 {
+      text-align: center;
+    }
+    .slot {
+      border: 1px solid #ccc;
+      padding: 15px;
+      margin-bottom: 15px;
+      border-radius: 6px;
+    }
+    .full {
+      background-color: #f5f5f5;
+      color: #999;
+    }
+    button {
+      padding: 6px 12px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+
+<h1>質問受付 予約</h1>
+<p>希望する時間帯を選んでください（各回15名まで、先着順）。</p>
+
+<div id="slots"></div>
+
+<script>
+const CAPACITY = 15;
+
+const schedules = [
+  "1月19日（月）17:00-18:15",
+  "1月19日（月）18:15-19:30",
+  "1月20日（火）09:00-10:15",
+  "1月21日（水）09:00-10:15"
+];
+
+// ローカルストレージから予約数を読み込み
+function getCount(slot) {
+  return Number(localStorage.getItem(slot)) || 0;
+}
+
+function reserve(slot) {
+  let count = getCount(slot);
+  if (count >= CAPACITY) {
+    alert("この時間帯は満席です。");
+    return;
+  }
+  localStorage.setItem(slot, count + 1);
+  render();
+  alert("予約を受け付けました。");
+}
+
+function render() {
+  const container = document.getElementById("slots");
+  container.innerHTML = "";
+
+  schedules.forEach(slot => {
+    const count = getCount(slot);
+    const remaining = CAPACITY - count;
+
+    const div = document.createElement("div");
+    div.className = "slot" + (remaining === 0 ? " full" : "");
+
+    div.innerHTML = `
+      <strong>${slot}</strong><br>
+      残席：${remaining} / ${CAPACITY}<br>
+      <button ${remaining === 0 ? "disabled" : ""}>
+        ${remaining === 0 ? "満席" : "予約する"}
+      </button>
+    `;
+
+    if (remaining > 0) {
+      div.querySelector("button").onclick = () => reserve(slot);
+    }
+
+    container.appendChild(div);
+  });
+}
+
+render();
+</script>
+
+</body>
+</html>
