@@ -20,7 +20,7 @@
 
   async function loadSlots() {
     const { data, error } = await supabaseClient
-      .from("reservation_slots")
+      .from("reservations")
       .select("*")
       .order("id");
 
