@@ -5,68 +5,65 @@
   <title>質問予約</title>
 </head>
 <body>
+  <h1>質問受付 予約</h1>
+  <div id="slots"></div>
 
-<h1>質問受付 予約</h1>
-<div id="slots"></div>
+  <!-- Supabase client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const supabaseClient = supabase.createClient(
+      "https://ihkfobvucfqpymypnvcn.supabase.co",
+      "sb_publishable_SXqmjrs_UIuv7u7YCuGDRA_adqmUBEW"
+    );
 
-<!-- Supabase SDK -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    async function loadSlots() {
+      const { data, error } = await supabaseClient
+        .from("reservations")
+        .select("*")
+        .order("id");
 
-<script>
- const supabaseClient = supabase.createClient(
-    "https://ihkfobvucfqpymypnvcn.supabase.co",
-    "sb_publishable_SXqmjrs_UIuv7u7YCuGDRA_adqmUBEW"
-  );
+      if (error) {
+        console.error(error);
+        alert("読み込みエラー");
+        return;
+      }
 
-  async function loadSlots() {
-    const { data, error } = await supabaseClient
-      .from("reservations")
-      .select("*")
-      .order("id");
+      const container = document.getElementById("slots");
+      container.innerHTML = "";
 
-    if (error) {
-      alert("読み込みエラー");
-      console.error(error);
-      return;
+      data.forEach(slot => {
+        const div = document.createElement("div");
+        div.style.marginBottom = "10px";
+
+        const label = document.createElement("span");
+        label.textContent =
+          `${slot.data_label}（${slot.current_count}/${slot.max_count}）`;
+
+        const button = document.createElement("button");
+        button.textContent = "予約";
+        button.disabled = slot.current_count >= slot.max_count;
+
+        button.onclick = async () => {
+          const { error } = await supabaseClient
+            .from("reservations")
+            .update({ current_count: slot.current_count + 1 })
+            .eq("id", slot.id);
+
+          if (error) {
+            alert("満席です");
+            console.error(error);
+          }
+
+          loadSlots(); // 再読込
+        };
+
+        div.appendChild(label);
+        div.appendChild(button);
+        container.appendChild(div);
+      });
     }
 
-    const container = document.getElementById("slots");
-    container.innerHTML = "";
-
-    data.forEach(slot => {
-      const div = document.createElement("div");
-      div.style.marginBottom = "10px";
-
-      const label = document.createElement("span");
-      label.textContent =
-        `${slot.date_label}（${slot.current_count}/${slot.max_count}）`;
-
-      const button = document.createElement("button");
-      button.textContent = "予約";
-      button.disabled = slot.current_count >= slot.max_count;
-
-      button.onclick = async () => {
-        const { error } = await supabaseClient
-          .from("reservation_slots")
-          .update({ current_count: slot.current_count + 1 })
-          .eq("id", slot.id);
-
-        if (error) {
-          alert("満席です");
-          console.error(error);
-        }
-
-        loadSlots(); // 再読込
-      };
-
-      div.appendChild(label);
-      div.appendChild(button);
-      container.appendChild(div);
-    });
-  }
-
-  loadSlots();
-</script>
-
+    loadSlots();
+  </script>
 </body>
 </html>
