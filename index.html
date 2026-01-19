@@ -2,94 +2,65 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>質問受付 予約ページ</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      max-width: 700px;
-      margin: 40px auto;
-    }
-    h1 {
-      text-align: center;
-    }
-    .slot {
-      border: 1px solid #ccc;
-      padding: 15px;
-      margin-bottom: 15px;
-      border-radius: 6px;
-    }
-    .full {
-      background-color: #f5f5f5;
-      color: #999;
-    }
-    button {
-      padding: 6px 12px;
-      font-size: 14px;
-    }
-  </style>
+  <title>質問予約</title>
 </head>
 <body>
+  <h1>質問受付 予約</h1>
+  <div id="slots"></div>
 
-<h1>質問受付 予約</h1>
-<p>希望する時間帯を選んでください（各回15名まで、先着順）。</p>
+  <!-- Supabase client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const supabase = supabase.createClient(
+      "https://ihkfobvucfqpymypnvcn.supabase.co",
+      "sb_publishable_SXqmjrs_UIuv7u7YCuGDRA_adqmUBEW"
+    );
 
-<div id="slots"></div>
+    async function loadSlots() {
+      const { data, error } = await supabase
+        .from("reservation_slots")
+        .select("*")
+        .order("id");
 
-<script>
-const CAPACITY = 15;
+      if (error) {
+        alert("読み込みエラー");
+        return;
+      }
 
-const schedules = [
-  "1月19日（月）17:00-18:15",
-  "1月19日（月）18:15-19:30",
-  "1月20日（火）09:00-10:15",
-  "1月21日（水）09:00-10:15"
-];
+      const container = document.getElementById("slots");
+      container.innerHTML = "";
 
-// ローカルストレージから予約数を読み込み
-function getCount(slot) {
-  return Number(localStorage.getItem(slot)) || 0;
-}
+      data.forEach(slot => {
+        const div = document.createElement("div");
+        div.style.marginBottom = "10px";
 
-function reserve(slot) {
-  let count = getCount(slot);
-  if (count >= CAPACITY) {
-    alert("この時間帯は満席です。");
-    return;
-  }
-  localStorage.setItem(slot, count + 1);
-  render();
-  alert("予約を受け付けました。");
-}
+        const label = document.createElement("span");
+        label.textContent =
+          `${slot.date_label}（${slot.current_count}/${slot.max_count}）`;
 
-function render() {
-  const container = document.getElementById("slots");
-  container.innerHTML = "";
+        const button = document.createElement("button");
+        button.textContent = "予約";
+        button.disabled = slot.current_count >= slot.max_count;
 
-  schedules.forEach(slot => {
-    const count = getCount(slot);
-    const remaining = CAPACITY - count;
+        button.onclick = async () => {
+          const { error } = await supabase
+            .from("reservation_slots")
+            .update({ current_count: slot.current_count + 1 })
+            .eq("id", slot.id);
 
-    const div = document.createElement("div");
-    div.className = "slot" + (remaining === 0 ? " full" : "");
+          if (error) {
+            alert("満席です");
+          }
+          loadSlots(); // 再読込
+        };
 
-    div.innerHTML = `
-      <strong>${slot}</strong><br>
-      残席：${remaining} / ${CAPACITY}<br>
-      <button ${remaining === 0 ? "disabled" : ""}>
-        ${remaining === 0 ? "満席" : "予約する"}
-      </button>
-    `;
-
-    if (remaining > 0) {
-      div.querySelector("button").onclick = () => reserve(slot);
+        div.appendChild(label);
+        div.appendChild(button);
+        container.appendChild(div);
+      });
     }
 
-    container.appendChild(div);
-  });
-}
-
-render();
-</script>
-
+    loadSlots();
+  </script>
 </body>
 </html>
