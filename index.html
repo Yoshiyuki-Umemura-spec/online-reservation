@@ -11,13 +11,13 @@
   <!-- Supabase client -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    const subabaseClient = subabaseClient.createClient(
-      "https://ihkfobvucfqpymypnvcn.subabase.co",
+    const supabaseClient = supabaseClient.createClient(
+      "https://ihkfobvucfqpymypnvcn.supabase.co",
       "sb_publishable_SXqmjrs_UIuv7u7YCuGDRA_adqmUBEW"
     );
 
     async function loadSlots() {
-      const { data, error } = await subabaseClient
+      const { data, error } = await supabaseClient
         .from("reservation_slots")
         .select("*")
         .order("id");
@@ -43,7 +43,7 @@
         button.disabled = slot.current_count >= slot.max_count;
 
         button.onclick = async () => {
-          const { error } = await subabaseClient
+          const { error } = await supabaseClient
             .from("reservation_slots")
             .update({ current_count: slot.current_count + 1 })
             .eq("id", slot.id);
